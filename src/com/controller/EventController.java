@@ -7,7 +7,6 @@
 //this is the event controller; this will deal with any CRUD operations for the model object of event
 package com.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -24,7 +23,7 @@ import com.business.EventBusinessInterface;
 import com.model.Event;
 
 @Controller 
-//@RequestMapping("/event")
+//@RequestMapping("/user")
 public class EventController {
 	//SpringBean declaration
 	EventBusinessInterface service;
@@ -39,14 +38,25 @@ public class EventController {
 	
 	/**
 	 * This method will display the events page
-	 * @return adminEventsPage 
+	 * @return eventsPage 
 	 */
 	@RequestMapping(path="/events", method=RequestMethod.GET)
 	public ModelAndView displayEvents() { 
 		//call the order business service to return a list of events
 		List<Event> events = service.findAllEvents(); 
+		return new ModelAndView("eventsPage", "events", events);
+	}
+	
+	/**
+	 * This method will display the admin events page
+	 * @return adminEventsPage 
+	 */
+	@RequestMapping(path="/adminEvents", method=RequestMethod.GET)
+	public ModelAndView displayAdminEvents() { 
+		//call the order business service to return a list of events
+		List<Event> events = service.findAllEvents(); 
 		return new ModelAndView("adminEventsPage", "events", events);
-		}
+	}
 	
 	/**
 	 * This method will display the createEventPage
@@ -65,163 +75,141 @@ public class EventController {
 	 */
 	@RequestMapping(path="/createEventSuccess", method = RequestMethod.POST)
 	public ModelAndView createEvent(@Valid @ModelAttribute("event") Event event, BindingResult result) { 
-		//validate the form 
-		if(result.hasErrors()) { 
-			//return to create event form to show any event creation errors
-			return new ModelAndView("createEventPage", "event", event); 
-		} 
+				//validate the form 
+				if(result.hasErrors()) { 
+					//return to create event form to show any event creation errors
+					return new ModelAndView("createEventPage", "event", event); 
+				}
 				
-		//call the order business service to create the event & check if successful
-		if (service.addEvent(event)) {
+				//call the order business service to create the event & check if successful
+				if (service.addEvent(event)) {
 				
-			//call the order business service to return a list of events
-			List<Event> events = service.findAllEvents(); 
+					//call the order business service to return a list of events
+					List<Event> events = service.findAllEvents(); 
 					
-			//return to the admin events page to show that event creation was successful
-				//no admin modules have been create yet so it will return to an temp. admin events page 
-				return new ModelAndView("adminEventsPage", "events", events); 
-		}
-		else { 
-			//if not, 
+					//return to the admin events page to show that event creation was successful
+						//no admin modules have been create yet so it will return to an temp. admin events page 
+					return new ModelAndView("adminEventsPage", "events", events); 
+				}
+				else { 
+					//if not, 
 					
-			//create a ModelAndView 
-			ModelAndView mv = new ModelAndView("createEventPage", "event", event); 
+					//create a ModelAndView 
+					ModelAndView mv = new ModelAndView("createEventPage", "event", event); 
 					
-			//create new object to output that there was a database connection error
-			mv.addObject("error", new String("Could not connect to database!")); 
+					//create new object to output that there was a database connection error
+					mv.addObject("error", new String("Could not connect to database!")); 
 					
-			//return to create event form page to show the connection error
-			return mv; 
-		}
-	}
-	
+					//return to create event form page to show the connection error
+					return mv; 
+				}
+			}
+
 	/**
 	 * This method will display the updateEventPage
 	 * @param id of event
 	 * @return updateEventPage, if the connection was successful; errorPage with errors displayed, if unsuccessful
 	 */
-	@RequestMapping(path="/updateEvent", method = RequestMethod.POST) 
-	public ModelAndView displayEventUpdatePage(@RequestParam(name= "id") int id) { 
-		
-		//check if an id was passed
-		if (id != 0) { 
-			//call the order business service to find the event by its given id 
-			Event event = service.findEvent(id); 
-			
-			if (event != null) { 
-				return new ModelAndView("updateEventPage", "event", event);
+			@RequestMapping(path="/updateEvent", method = RequestMethod.POST) 
+			public ModelAndView displayEventUpdatePage(@RequestParam("eventId") int eventId) { 
+
+				//check if id was passed
+				if (eventId != 0) {
+				Event event = service.findEvent(eventId);
+				
+				if (event != null) {
+					return new ModelAndView("updateEventPage", "event", event);
+				}
+				else {
+					//create a ModelAndView 
+					ModelAndView mv = new ModelAndView("errorPage"); 
+							
+					//create new object to output the error
+					mv.addObject("error", new String("Could not connect to database!")); 
+							
+					//return to create event form page to show the connection error
+					return mv; 
+				}
+				}
+				else {		
+					//create a ModelAndView 
+					ModelAndView mv = new ModelAndView("errorPage"); 
+							
+					//create new object to output the error
+					mv.addObject("error", new String("There was an error with finding that event!")); 
+							
+					//return to create event form page to show the connection error
+					return mv; 
+					
+				}
 			}
-			else { 
-				//create a ModelAndView 
-				ModelAndView mv = new ModelAndView("errorPage"); 
+					  
+			/**
+			 * This method will carry out the event update  by sending the validated event to the business service
+			 * @param event
+			 * @param result
+			 * @return adminEventsPage, if the update was successful; updateEventPage with errors displayed, if unsuccessful
+			 */
+			@RequestMapping(path="/updateEventSuccess", method = RequestMethod.POST)
+			public ModelAndView updateEvent(@Valid @ModelAttribute("event") Event event, BindingResult result) { 
+				//validate the form 
+				if(result.hasErrors()) { 
+					//return to update event form to show any event update errors
+					return new ModelAndView("updateEventPage", "event", event); 
+				} 
 						
-				//create new object to output the error
-				mv.addObject("error", new String("Could not connect to database!")); 
+				//call the order business service to update the event & check if successful
+				if (service.editEvent(event)) {
 						
-				//return to create event form page to show the connection error
-				return mv; 
+					//call the order business service to return a list of events
+					List<Event> events = service.findAllEvents(); 
+							
+					//return to the admin events page to show that event update was successful
+						//no admin modules have been create yet so it will return to an temp. admin events page 
+						return new ModelAndView("adminEventsPage", "events", events); 
+				}
+				else { 
+					//if not, 
+							
+					//create a ModelAndView 
+					ModelAndView mv = new ModelAndView("updateEventPage", "event", event); 
+							
+					//create new object to output that there was a database connection error
+					mv.addObject("error", new String("Could not connect to database!")); 
+							
+					//return to create event form page to show the connection error
+					return mv; 
+				}
 			}
-
-		}
-		else {		
-			//create a ModelAndView 
-			ModelAndView mv = new ModelAndView("errorPage"); 
-					
-			//create new object to output the error
-			mv.addObject("error", new String("There was an error with finding that event!")); 
-					
-			//return to create event form page to show the connection error
-			return mv; 
 			
-		}
-
-	}
-	
-	/**
-	 * This method will carry out the event update  by sending the validated event to the business service
-	 * @param event
-	 * @param result
-	 * @return adminEventsPage, if the update was successful; updateEventPage with errors displayed, if unsuccessful
-	 */
-	@RequestMapping(path="/updateEventSuccess", method = RequestMethod.POST)
-	public ModelAndView updateEvent(@Valid @ModelAttribute("event") Event event, BindingResult result) { 
-
-		//validate the form 
-		if(result.hasErrors()) { 
-			//return to update event form to show any event update errors
-			return new ModelAndView("updateEventPage", "event", event); 
-		} 
-
-		//call the order business service to update the event & check if successful
-		if (service.editEvent(event)) {
-				
-			//call the order business service to return a list of events
-			List<Event> events = service.findAllEvents(); 
-					
-			//return to the admin events page to show that event update was successful
-				//no admin modules have been create yet so it will return to an temp. admin events page 
-				return new ModelAndView("adminEventsPage", "events", events); 
-		}
-		else { 
-			//if not, 
-					
-			//create a ModelAndView 
-			ModelAndView mv = new ModelAndView("updateEventPage", "event", event); 
-					
-			//create new object to output that there was a database connection error
-			mv.addObject("error", new String("Could not connect to database!")); 
-					
-			//return to create event form page to show the connection error
-			return mv; 
-		}
-	}
-	
-	/**
-	 * This method will carry out the event deletion by sending the event id to the business service	  
-	 * @param id
-	 * @return adminEventsPage, if the deletion was successful; errorPage with errors displayed, if unsuccessful
-	 */
-	@RequestMapping(path="/deleteEvent", method = RequestMethod.POST)
-	public ModelAndView deleteEvent(@RequestParam(name= "id") int id) { 
-		//call the order business service to update the event & check if successful
-		if (service.deleteEvent(id)) {
-				
-			//call the order business service to return a list of events
-			List<Event> events = service.findAllEvents(); 
-					
-			//return to the admin events page to show that event update was successful
-				//no admin modules have been create yet so it will return to an temp. admin events page 
-				return new ModelAndView("adminEventsPage", "events", events); 
-		}
-		else { 
-			//create a ModelAndView 
-			ModelAndView mv = new ModelAndView("errorPage"); 
-					
-			//create new object to output the error
-			mv.addObject("error", new String("There was an error deleting that event!")); 
-					
-			//return to create event form page to show the connection error
-			return mv; 
-		}
-	}
-	
-	
-	/**
-	 * This method will display the adminEventsPage
-	 * @return adminEventsPage
-	 */
-	@RequestMapping(path="/events", method = RequestMethod.POST)
-	public ModelAndView showEvents() { 
-				
-				
-			//call the order business service to return a list of events
-			List<Event> events = service.findAllEvents(); 
-					
-			//return to the admin events page to show that event update was successful
-				//no admin modules have been create yet so it will return to an temp. admin events page 
-				return new ModelAndView("adminEventsPage", "events", events); 
-		
-	}
-	
+			
+			/**
+			 * This method will carry out the event deletion by sending the event id to the business service	  
+			 * @param id
+			 * @return adminEventsPage, if the deletion was successful; errorPage with errors displayed, if unsuccessful
+			 */
+			@RequestMapping(path="/deleteEvent", method = RequestMethod.POST)
+			public ModelAndView deleteEvent(@RequestParam("eventId") int eventId) { 
+				//call the order business service to update the event & check if successful
+				if (service.deleteEvent(eventId)) {
+						
+					//call the order business service to return a list of events
+					List<Event> events = service.findAllEvents(); 
+							
+					//return to the admin events page to show that event update was successful
+						//no admin modules have been create yet so it will return to an temp. admin events page 
+						return new ModelAndView("adminEventsPage", "events", events); 
+				}
+				else { 
+					//create a ModelAndView 
+					ModelAndView mv = new ModelAndView("errorPage"); 
+							
+					//create new object to output the error
+					mv.addObject("error", new String("There was an error deleting that event!")); 
+							
+					//return to create event form page to show the connection error
+					return mv;  
+				}
+			}
 
 }
